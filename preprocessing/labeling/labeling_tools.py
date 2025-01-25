@@ -1,7 +1,6 @@
 import tensorflow as tf
 import os
 
-
 class ImageLabeling:
     def __init__(self, image_dataset_dir: str = None, labels: dict = None):
         self.image_dataset_dir = image_dataset_dir
@@ -36,8 +35,7 @@ class ImageLabeling:
             for image_name in image_files:
                 image_path = os.path.join(self.image_dataset_dir, image_name)
 
-        
-                class_name = image_name.split('_')[0] # extract the class label based on the image name (e.g., "healthy_0".split('_')[0] = "healthy")
+                class_name = image_name.split('_')[0]  # extract the class label based on the image name (e.g., "healthy_0".split('_')[0] = "healthy")
                 label = self.labels[class_name]  # map the class to a numeric label based on the dictionary
 
                 # read the image as binary and store it in the image_data variable
@@ -59,8 +57,11 @@ class ImageLabeling:
         self.load_data(tfrecord_file_name)  # Loading and creating dataset variable
         print(f"TFRecord saved to {tfrecord_file_name}")
 
-    def load_data(self, tfrecord_file_name):
-        # Function to parse the TFRecord examples
+    def load_data(self, tfrecord_files):
+        """
+        Função para carregar múltiplos arquivos TFRecord.
+        Agora a função aceita uma lista de arquivos TFRecord para carregar todos de uma vez.
+        """
         def parse_tfrecord(example_proto):
             # Define the expected features
             feature_description = {
@@ -69,16 +70,42 @@ class ImageLabeling:
             }
             return tf.io.parse_single_example(example_proto, feature_description)
 
-        # load TFRecord file
-        self.dataset = tf.data.TFRecordDataset(tfrecord_file_name)
+        # Carregar todos os arquivos TFRecord fornecidos
+        self.dataset = tf.data.TFRecordDataset(tfrecord_files)
 
-        # parse examples in the dataset
+        # Parse the examples in the dataset
         self.parsed_dataset = self.dataset.map(parse_tfrecord)
 
-        # check if dataset has examples
+        # Check if dataset has examples
         try:
             sample = next(iter(self.parsed_dataset))
-            print("Successfully loaded")
+            print("Successfully loaded the dataset from multiple TFRecord files.")
 
         except StopIteration:
             print("No data found in the parsed dataset.")
+
+    def split_tfrecord(self, tfrecord_file_name, num_parts):
+        """
+        Função para dividir um arquivo TFRecord em várias partes menores.
+        :param tfrecord_file_name: Caminho para o arquivo TFRecord original.
+        :param num_parts: Número de partes que o arquivo deve ser dividido.
+        """
+        # Primeiro, leia todos os exemplos do arquivo original
+        raw_dataset = tf.data.TFRecordDataset(tfrecord_file_name)
+        examples = list(raw_dataset)  # Carregar todos os exemplos em memória
+
+        # Calcular o número de exemplos por parte
+        total_examples = len(examples)
+        examples_per_part = total_examples // num_parts
+
+        # Dividir os exemplos em partes menores e escrever em novos arquivos
+        for i in range(num_parts):
+            part_filename = f"{tfrecord_file_name}_part_{i+1}.tfrecord"
+            with tf.io.TFRecordWriter(part_filename) as writer:
+                start_index = i * examples_per_part
+                end_index = (i + 1) * examples_per_part if i < num_parts - 1 else total_examples
+                for example in examples[start_index:end_index]:
+                    writer.write(example.numpy())  # Escrever o exemplo no novo arquivo
+
+            print(f"Part {i+1} saved to {part_filename}")
+
