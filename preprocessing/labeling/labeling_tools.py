@@ -39,7 +39,7 @@ class ImageLabeling:
                 label = self.labels[class_name]  # map the class to a numeric label based on the dictionary
 
                 # read the image as binary and store it in the image_data variable
-                with open(image_path, "rb") as f:
+                with open(image_path, "rb") as f: 
                     image_data = f.read()
 
                 # create a TFRecord example
@@ -58,10 +58,7 @@ class ImageLabeling:
         print(f"TFRecord saved to {tfrecord_file_name}")
 
     def load_data(self, tfrecord_files):
-        """
-        Função para carregar múltiplos arquivos TFRecord.
-        Agora a função aceita uma lista de arquivos TFRecord para carregar todos de uma vez.
-        """
+        
         def parse_tfrecord(example_proto):
             # Define the expected features
             feature_description = {
@@ -85,27 +82,19 @@ class ImageLabeling:
             print("No data found in the parsed dataset.")
 
     def split_tfrecord(self, tfrecord_file_name, num_parts):
-        """
-        Função para dividir um arquivo TFRecord em várias partes menores.
-        :param tfrecord_file_name: Caminho para o arquivo TFRecord original.
-        :param num_parts: Número de partes que o arquivo deve ser dividido.
-        """
-        # Primeiro, leia todos os exemplos do arquivo original
         raw_dataset = tf.data.TFRecordDataset(tfrecord_file_name)
         examples = list(raw_dataset)  # Carregar todos os exemplos em memória
 
-        # Calcular o número de exemplos por parte
         total_examples = len(examples)
         examples_per_part = total_examples // num_parts
 
-        # Dividir os exemplos em partes menores e escrever em novos arquivos
         for i in range(num_parts):
             part_filename = f"{tfrecord_file_name}_part_{i+1}.tfrecord"
             with tf.io.TFRecordWriter(part_filename) as writer:
                 start_index = i * examples_per_part
                 end_index = (i + 1) * examples_per_part if i < num_parts - 1 else total_examples
                 for example in examples[start_index:end_index]:
-                    writer.write(example.numpy())  # Escrever o exemplo no novo arquivo
+                    writer.write(example.numpy())  
 
             print(f"Part {i+1} saved to {part_filename}")
 
