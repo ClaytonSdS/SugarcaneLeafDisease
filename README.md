@@ -22,13 +22,13 @@ Note that the entire preprocessing pipeline can be seen in Figure 1.
 ## Architecture
 The architecture we selected for our model can be seen in Figure 4 below.
 
-Note that it is a sequential model with residual blocks—Block Type 1 and Block Type 2 (as shown in Fig. 3-a and 3-b). These blocks have a sandwich-like composition, with a Conv-CBAM-Conv structure as the key combination. In this case, we implemented [CBAM](figures/cbam.png) because it is a lightweight feature refinement module that infers attention maps [[2]](https://doi.org/10.1007/978-3-030-01234-2_1), including both channel and spatial maps.
+Note that it is a sequential model with residual blocks—Block Type 1 and Block Type 2 (as shown in Fig. 3-b and 3-c). These blocks have a sandwich-like composition, with a Conv-CBAM-Conv structure as the key combination. In this case, we implemented [CBAM](figures/cbam.png) because it is a lightweight feature refinement module that infers attention maps [[2]](https://doi.org/10.1007/978-3-030-01234-2_1), including both channel and spatial maps.
 
-Moreover, deep convolutional networks are known to learn increasingly deeper representations through long sequences of convolutional layers with progressively more kernels. As a consequence, we followed the same principles proposed in AlexNet [3], incorporating a total of fiveteen convolutional layers.
+Moreover, deep convolutional networks are known to learn increasingly deeper representations through long sequences of convolutional layers with progressively more kernels. As a consequence, we followed those same principles proposed in AlexNet paper [3], incorporating a total of fiveteen convolutional layers.
 
 Furthermore, instead of utilizing an average pooling layer [[4]](https://doi.org/10.1109/CVPR.2016.90) — which serves as an aggregator of spatial information — we opted for max pooling, which produced better results while maintaining the same aggregation purpose — max pooling also acts as a distinctive object feature selector [[2]](https://doi.org/10.1007/978-3-030-01234-2_1) — and reduce the number of parameters.
 
-At last	, in order to avoid the vanishing gradient problem, we employed a residual approach to connect these residual blocks, following the proposed approach of typical ResNet architectures [4].
+At last, in order to avoid the vanishing gradient problem, we employed a residual approach to connect these residual blocks, following the proposed approach of typical ResNet architectures [[4]](https://doi.org/10.1109/CVPR.2016.90).
 
 ![model18-diagram](figures/model_18.png)
 
@@ -38,15 +38,15 @@ At last	, in order to avoid the vanishing gradient problem, we employed a residu
 
 |           | precision       |  recall       | f1-score       | support       |
 |-----------|-----------------|---------------|----------------|---------------|
-|  healthy |   0.87  |  0.92  | 0.89  | 154 |
-|  mosaic  |   0.84  |  0.67  | 0.75  | 110 |
-|  redrot  |   0.97  |  0.96  | 0.97  | 153 |
-|  rust    |   0.88  |  0.99  | 0.93  | 122 |
-|  yellow  |   0.94  |  0.94  | 0.94  | 154 |
+|  healthy |   0.81  |  0.96  | 0.88  | 159 |
+|  mosaic  |   0.90  |  0.69  | 0.78  | 102 |
+|  redrot  |   0.97  |  0.94  | 0.95  | 158 |
+|  rust    |   1.00  |  0.91  | 0.95  | 153 |
+|  yellow  |   0.87  |  0.96  | 0.91  | 121 |
 ||||||
-|  accuracy      |         |        | 0.91  | 693 |
-|  macro avg     |   0.90  |  0.90  | 0.90  | 693 |
-|  weighted avg  |   0.91  |  0.91  | 0.90  | 693 |
+|  accuracy      |         |        | 0.90  | 693 |
+|  macro avg     |   0.91  |  0.89  | 0.89  | 693 |
+|  weighted avg  |   0.91  |  0.90  | 0.90  | 693 |
 
 ### How to use it?
 ```python
