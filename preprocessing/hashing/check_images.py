@@ -3,14 +3,14 @@ import hashlib
 import pandas as pd
 from PIL import Image
 
-# Calcula um identificador único (hash) para cada imagem.
+# Calculates a unique identifier (hash) for each image.
 
 def calculate_image_hash(image_path):
     with open(image_path, 'rb') as f:
         image_data = f.read()
     return hashlib.md5(image_data).hexdigest()
 
-# Mapeia todas as imagens em um diretório e identifica imagens duplicadas.
+# Maps all the images in a directory and identifies duplicate images.
 
 def map_images(directory):
     image_hashes = {}
@@ -29,18 +29,18 @@ def map_images(directory):
 
     return image_hashes, duplicate_images
 
-# Define o caminho do diretorio das imagens.
+# Defines the path of the image directory.
 current_directory = os.getcwd()
-dataset_path = os.path.join(current_directory, "dataset/preprocessing/resizing")
+dataset_path = os.path.join(current_directory, "preprocessing/resizing")
 
 image_hashes, duplicates = map_images(dataset_path)
 
-# Mostra imagens duplicadas
+# Shows duplicate images.
 print("Imagens duplicadas encontradas:")
 for dup, original in duplicates:
     print(f"Duplicado: {dup} | Original: {original}")
 
-# Salva os resultados em CSV
+# Saves the results as CSV.
 pd.DataFrame(list(image_hashes.items()), columns=['Hash', 'FilePath']).to_csv('image_mapping.csv', index=False)
 pd.DataFrame(duplicates, columns=['DuplicatedImage', 'OriginalImage']).to_csv('duplicates_mapping.csv', index=False)
 

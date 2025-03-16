@@ -67,7 +67,7 @@ class ImageLabeling:
             }
             return tf.io.parse_single_example(example_proto, feature_description)
 
-        # Carregar todos os arquivos TFRecord fornecidos
+        # Load all the TFRecord files provided
         self.dataset = tf.data.TFRecordDataset(tfrecord_files)
 
         # Parse the examples in the dataset
@@ -83,7 +83,7 @@ class ImageLabeling:
 
     def split_tfrecord(self, tfrecord_file_name, num_parts):
         raw_dataset = tf.data.TFRecordDataset(tfrecord_file_name)
-        examples = list(raw_dataset)  # Carregar todos os exemplos em memória
+        examples = list(raw_dataset)  # Load all examples into memory
 
         total_examples = len(examples)
         examples_per_part = total_examples // num_parts

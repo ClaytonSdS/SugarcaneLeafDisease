@@ -16,4 +16,4 @@ labeling = ImageLabeling(image_dataset_dir=dataset_dir,
                          labels=labels)
 
 labeling.record(tfrecord_file_name="tfrecord_dataset")
-labeling.split_tfrecord("tfrecord_dataset", num_parts=4)  # Dividindo em 3 partes, por exemplo
+labeling.split_tfrecord("tfrecord_dataset", num_parts=4)  # Split into 3 parts, for example
