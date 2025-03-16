@@ -1,5 +1,5 @@
 # SugarcaneLeafDisease/__init__.py
 
-# Aqui você pode importar classes e funções principais para facilitar o acesso ao pacote
+# Here you can import main classes and functions for easy access to the package
 from .preprocessing import ImageLabeling
 from .models import Model_18
