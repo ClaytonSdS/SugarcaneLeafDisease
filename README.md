@@ -61,8 +61,6 @@ model = Model_18()
 model.predict(images)
 ```
 
-How to use?
-
 ### What's next?
 In conclusion, while our project serves its purpose — predicting diseases in sugarcane leaves — we envision that, to achieve its full potential, one possible step is the incorporation of more samples into the dataset. This would help refine the decision boundary between 'healthy' and 'mosaic' disease, as well as exploring advanced techniques such as transformers. 
 
