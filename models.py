@@ -12,12 +12,15 @@ import jax.numpy as jnp
 
 
 class Model:
-    def __init__(self, filepath=None):
+    def __init__(self, filepath=None, patch=None):
         self.filepath = filepath
-        self.model = self.load_model()
 
-    def load_model(self):
-        return tf.keras.models.load_model(self.filepath, custom_objects={'CBAM': CBAM, 'ResidualBlock1': ResidualBlock1, 'ResidualBlock2': ResidualBlock2})
+        self.model_patch = self.load_model(path = patch)
+        self.model = self.load_model(path = self.filepath, 
+                                     custom_objects={'CBAM': CBAM, 'ResidualBlock1': ResidualBlock1, 'ResidualBlock2': ResidualBlock2})
+
+    def load_model(self, path:str, custom_objects:dict=None):
+        return tf.keras.models.load_model(path, custom_objects)
 
     #############################################################################################################################################################################
 
@@ -165,7 +168,7 @@ class Model:
         patches = self.extract_patches_jax(jnp.array(self.array2predict))  # (batch, n_patches, 64, 64, 3)
 
         # Realiza a predição em todos os patches
-        predicted_patches = jax.vmap(self.model.predict)(patches)
+        predicted_patches = jax.vmap(self.model_patch.predict)(patches)
 
         # Converte para classes
         self.predicted_classes = jnp.argmax(predicted_patches, axis=-1)
@@ -219,7 +222,8 @@ class Model:
 
 
 class Model_18(Model):
-    def __init__(self, filename="model18.keras"):
+    def __init__(self):
         dir_path = os.path.dirname(os.path.abspath(__file__)) 
-        path = os.path.join(dir_path, filename)  
-        super().__init__(filepath=path)
+        path = os.path.join(dir_path, "model18.keras")  
+        patch = os.path.join(dir_path, "model18_patches.keras")  
+        super().__init__(filepath=path, patch=patch)
