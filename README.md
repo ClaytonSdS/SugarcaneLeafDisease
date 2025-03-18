@@ -15,7 +15,7 @@ The next phase was a segmentation task, where we utilized two different approach
 After this process, all the samples were segmented and ready to be used in the training phase.
 
 Note that the entire preprocessing pipeline can be seen in Figure 1.
-
+*
 
 ![pipeline](figures/preprocessing.png)
 
