@@ -24,12 +24,12 @@ def calculate_padding(size:int, goal:int):
 class Model:
     def __init__(self, filepath: str = None, patch: str = None, verbose: bool = True):
         """
-        Inicializa a classe Model, carregando os modelos Keras para previsões em lote e baseadas em patch.
+        Initializes the Model class by loading the Keras models for batch-based and patch-based predictions.
 
         Args:
-            filepath (str, opcional): Caminho para o modelo Keras de previsão em lote.
-            patch (str, opcional): Caminho para o modelo Keras de previsão baseada em patch.
-            verbose (bool, opcional): Se True, habilita a exibição de logs no terminal. Padrão é True.
+            filepath (str, optional): Path to the Keras model for batch-based prediction.
+            patch (str, optional): Path to the Keras model for patch-based prediction.
+            verbose (bool, optional): If True, enables logging output to the terminal. Default is True.
         """
         self.verbose = verbose
         self.filepath = filepath
@@ -44,6 +44,30 @@ class Model:
     def load_model(self, path: str, custom_objects: dict = None):
         return tf.keras.models.load_model(path, custom_objects)
 
+    def rescale_by_padding(self):
+        pad_height_left, pad_height_right = calculate_padding(self.height, self.target_size[0])
+        pad_width_left, pad_width_right = calculate_padding(self.width, self.target_size[1])
+
+        # Apply padding if necessary
+        if any(p > 0 for p in [pad_height_left, pad_height_right, pad_width_left, pad_width_right]):
+
+            new_height = self.height + pad_height_left + pad_height_right
+            new_width = self.width + pad_width_left + pad_width_right
+
+            self.array2predict = np.pad(self.array2predict,
+                          ((0, 0),                                # No padding for batch dimension
+                           (pad_height_left, pad_height_right),   # Padding for height
+                           (pad_width_left, pad_width_right),     # Padding for width
+                           (0, 0)),                               # No padding for channels
+                          mode='constant', constant_values=0)
+            
+            # Print message if verbose is enabled
+            self.print_verbose(f"[INFO] Padding applied, new shape: {self.array2predict.shape}")
+
+        else:
+          self.print_verbose(f"[INFO] No need for padding. The current input shape is already {self.array2predict.shape}, which matches the target size {self.target_size}.")
+
+
     def rescale_by_upscaling(self, array: np.array):
         resized = tf.image.resize(array, self.target_size, preserve_aspect_ratio=True)    
         self.print_verbose(f"[INFO] Upscaling patches to match model input shape {self.target_size}: {array.shape} → {resized.shape}")
@@ -53,6 +77,7 @@ class Model:
     def size_error_check(self):
         if self.height != self.target_size[0] or self.width != self.target_size[1]:
             self.array2predict = self.rescale_by_upscaling(array=self.array2predict)  
+            self.arra2predict = self.rescale_by_padding()        
         else:
             self.print_verbose(f"[INFO] No need for upscaling. The current input shape is already {self.array2predict.shape}, which matches the target size {self.target_size}.")
 
@@ -151,7 +176,6 @@ class Model:
         return np.vectorize(labels_inversed.get)(tf.argmax(pred, axis=-1))
 
 
-
 class Model_18(Model):
     """
     A subclass of the `Model` class, specifically designed for loading and predicting with the model 18 architecture.
@@ -172,7 +196,7 @@ class Model_18(Model):
         model (tf.keras.Model): The Keras model for batch-based predictions.
         model_patch (tf.keras.Model): The Keras model for patch-based predictions.
     """
-    
+
     def __init__(self, verbose: bool=True):
         dir_path = os.path.dirname(os.path.abspath(__file__)) 
         path = os.path.join(dir_path, "model18.keras")  
