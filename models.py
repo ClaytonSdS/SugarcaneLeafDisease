@@ -130,7 +130,6 @@ class Model:
             >>> predictions = model.predict(images)
             >>> decoded_labels = model.decode(predictions)
             >>> model.plot_image_predicted(image_index=0)
-
         """
         # Define the colors associated with each class label
         class_colors = {
@@ -157,6 +156,10 @@ class Model:
 
                 # Convert the tensor to a numpy array and normalize the image (values between 0 and 1)
                 img = self.patches[image_index, i, j].numpy().astype(float) / 255.0
+
+                # Ensure that `self.decoded` is not None
+                if self.decoded is None:
+                    self.decode()  # Decode if needed
 
                 # Get the class label and its corresponding color
                 label = self.decoded[image_index, i, j]
@@ -185,6 +188,7 @@ class Model:
 
         # Display the plot
         plt.show()
+
 
     def predict(self, images: np.array, patch_size: int = 64, use_patches: bool = True):
         images = np.array(images)
