@@ -1,13 +1,9 @@
 import os
 import tensorflow as tf
-from tensorflow.keras import layers
-from tensorflow.keras.saving import register_keras_serializable
-from .custom_layers import CBAM, ResidualBlock1, ResidualBlock2
+from .custom_layers import CBAM, Xception
 import numpy as np
-import cv2
-from skimage.transform import resize
-import jax
-import jax.numpy as jnp
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 
 def calculate_padding(size:int, goal:int):
@@ -20,9 +16,8 @@ def calculate_padding(size:int, goal:int):
       return 0, 0
 
 
-
 class Model:
-    def __init__(self, filepath: str = None, patch: str = None, verbose: bool = True):
+    def __init__(self, filepath: str = None, verbose: bool = True):
         """
         Initializes the Model class by loading the Keras models for batch-based and patch-based predictions.
 
@@ -33,9 +28,10 @@ class Model:
         """
         self.verbose = verbose
         self.filepath = filepath
-        self.model_patch = self.load_model(path=patch)
+        self.decoded = None
+        self.predicted = None
         self.model = self.load_model(path=self.filepath,
-                                     custom_objects={'CBAM': CBAM, 'ResidualBlock1': ResidualBlock1, 'ResidualBlock2': ResidualBlock2})
+                                     custom_objects={'CBAM': CBAM, 'Xception': Xception})
 
     def print_verbose(self, message: str):
         if self.verbose:
@@ -71,13 +67,13 @@ class Model:
     def rescale_by_upscaling(self, array: np.array):
         resized = tf.image.resize(array, self.target_size, preserve_aspect_ratio=True)    
         self.print_verbose(f"[INFO] Upscaling patches to match model input shape {self.target_size}: {array.shape} → {resized.shape}")
-        _, self.height, self.width, _ = resized.shape
+        _, self.height, self.width, _ = resized.shape # height and width to be used in rescale_by_padding()
         return resized
 
     def size_error_check(self):
         if self.height != self.target_size[0] or self.width != self.target_size[1]:
             self.array2predict = self.rescale_by_upscaling(array=self.array2predict)  
-            self.arra2predict = self.rescale_by_padding()        
+            self.rescale_by_padding()        
         else:
             self.print_verbose(f"[INFO] No need for upscaling. The current input shape is already {self.array2predict.shape}, which matches the target size {self.target_size}.")
 
@@ -89,29 +85,116 @@ class Model:
                 self.array2predict = np.expand_dims(self.array2predict, axis=0)  
                 num_channels = self.array2predict.shape[-1]  
                 if num_channels != 3:
-                    raise ValueError(f"Expected 3 channels, but received {num_channels}")
+                    raise ValueError(f"[ERROR] Expected 3 channels, but received {num_channels}")
             else:
-                raise ValueError(f"Expected shape (batch, height, width, channels), but received {shape}")
+                raise ValueError(f"[ERROR] Expected shape (batch, height, width, channels), but received {shape}")
                 
         self.batch_size, self.height, self.width, self.channels = self.array2predict.shape 
 
     def patches_check_validation(self):
         if self.patch_size > min(self.height, self.width):
-            raise ValueError(f"The maximum patch size for this configuration is {min(self.height, self.width)}")
+            raise ValueError(f"[ERROR] The maximum patch size for this configuration is {min(self.height, self.width)}")
         elif self.patch_size <= 0:
-            raise ValueError(f"The minimum patch size must be 1")
+            raise ValueError(f"[ERROR] The minimum patch size must be 1")
 
-    def predict(self, images: np.array, patch_size: int = 64, use_patches: bool = True, use_patch_model: bool = False):
+    # Check and validate the existence of predicted and decoded tensors before plotting
+    def plot_check(self):
+        # Check if predicted tensor exists
+        if self.predicted is not None:
+            # Check if predicted values are decoded
+            if self.decoded is None:
+                self.decode()  # Call decode() method to decode the predictions
+            
+        else:
+            raise ValueError("[ERROR] No predicted tensor found. Please call model.predict() first.")
+
+
+    def plot_image_predicted(self, image_index: int = 0):
+        """
+        Plot the model predictions into a grid-like plot.
+
+        This method visualizes the model's predictions by displaying patches of 
+        images and their predicted class labels with corresponding colors.
+
+        Args:
+            image_index (int): The index of the image to plot. 
+                                The value should be in the range [0, len(self.patches)],
+                                where `self.patches` contains the patches from the model's predictions.
+
+        Returns:
+            None: This method does not return anything, it only displays the plot.
+
+        Raises:
+            ValueError: If the `self.predicted`  value is not set correctly.
+        
+        Example:
+            >>> model = Model()
+            >>> predictions = model.predict(images)
+            >>> decoded_labels = model.decode(predictions)
+            >>> model.plot_image_predicted(image_index=0)
+
+        """
+        # Define the colors associated with each class label
+        class_colors = {
+            'healthy': (0, 0.5, 0, 0.4),  
+            'mosaic': (0.678, 0.847, 0.902, 0.4),  
+            'yellow': (1, 1, 0, 0.6),  
+            'rust': (0.6, 0, 0.8, 0.4), 
+            'redrot': (1, 0, 0, 0.6)  
+        }
+
+        # Perform a check to ensure that predicted and decoded values are available
+        self.plot_check()
+
+        # Reshaping the patches into a grid of images (each image is a patch)
+        patches_to_plot = tf.reshape(self.patches, [*self.patches.shape[:-1], self.patch_size, self.patch_size, 3])
+
+        # Initialize the plot with subplots arranged in a grid
+        fig, axes = plt.subplots(self.rows, self.cols, figsize=(self.cols * 2, self.rows * 2))
+
+        # Loop through each grid cell to plot the corresponding patch
+        for i in range(self.rows):
+            for j in range(self.cols):
+                ax = axes[i, j]
+
+                # Convert the tensor to a numpy array and normalize the image (values between 0 and 1)
+                img = self.patches[image_index, i, j].numpy().astype(float) / 255.0
+
+                # Get the class label and its corresponding color
+                label = self.decoded[image_index, i, j]
+                color = class_colors[label]  # Retrieve the color corresponding to the class label
+
+                # Create a colored overlay (filter) for the image using the RGB part of the color
+                overlay = np.full((self.patch_size, self.patch_size, 3), color[:3])  # Create a matrix filled with the RGB color
+                image_with_overlay = img * (1 - color[3]) + overlay * color[3]  # Blend the image with the color overlay
+
+                # Display the image with the overlay applied
+                ax.imshow(image_with_overlay)
+                ax.axis('off')  # Hide axes to make the images "stick together"
+
+        # Adjust layout to remove unnecessary whitespace between subplots
+        plt.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0.01, hspace=0.01)
+
+        # Create a legend to explain the color mapping for each class label
+        legend_labels = ['Healthy', 'Mosaic', 'Yellow', 'Rust', 'Redrot']
+        legend_colors = [class_colors['healthy'], class_colors['mosaic'], class_colors['yellow'], class_colors['rust'], class_colors['redrot']]
+
+        # Generate legend items with color using Line2D
+        legend_elements = [Line2D([0], [0], color=color[:3], lw=4) for color in legend_colors]
+
+        # Add the legend to the right side of the plot
+        fig.legend(legend_elements, legend_labels, loc='center left', fontsize=10, bbox_to_anchor=(1, 0.5), title="Legend", title_fontsize=12)
+
+        # Display the plot
+        plt.show()
+
+    def predict(self, images: np.array, patch_size: int = 64, use_patches: bool = True):
         images = np.array(images)
         self.use_patches = use_patches
         self.patch_size = patch_size
-        self.use_patch_model = use_patch_model
+        self.decoded = None                     #  decode status set to None
 
-        if not self.use_patches:
-            self.use_patch_model = False
-            self.print_verbose("[INFO] Not using patches, so use_patch_model set to False")
-
-        self.target_size = ((212, 212) if not self.use_patch_model or not self.use_patches else (64, 64))  
+        self.target_size = (255, 255)
         self.print_verbose(f'[INFO] Target size set to {self.target_size}')
 
         self.shape_mismatch_error_check(images)
@@ -137,8 +220,7 @@ class Model:
         self.print_verbose("[INFO] Image size validation: completed successfully")
 
         if self.use_patches:  
-            model_to_use = self.model_patch if self.use_patch_model else self.model   
-            self.predicted = model_to_use.predict(self.array2predict)  
+            self.predicted = self.model.predict(self.array2predict)  
             self.predicted = tf.reshape(self.predicted, [self.batch_size, self.rows, self.cols, 5])  
             self.print_verbose(f"[INFO] Patch-based prediction completed - Output shape: {self.predicted.shape}")  
         else:  
@@ -172,11 +254,12 @@ class Model:
         labels_inversed = {0: 'healthy', 1: 'mosaic', 2: 'yellow', 3: 'redrot', 4: 'rust'}
 
         pred = pred if pred is not None else self.predicted
+        self.decoded = np.vectorize(labels_inversed.get)(tf.argmax(pred, axis=-1)) if self.decoded is not None else self.decoded
+        
+        return self.decoded
 
-        return np.vectorize(labels_inversed.get)(tf.argmax(pred, axis=-1))
 
-
-class Model_18(Model):
+class Model_20(Model):
     """
     A subclass of the `Model` class, specifically designed for loading and predicting with the model 18 architecture.
 
@@ -188,17 +271,15 @@ class Model_18(Model):
         Model: A parent class responsible for handling the base operations of model loading, prediction, and image processing.
 
     Example:
-        >>> model = Model_18(verbose=True)
+        >>> model = Model_20(verbose=True)
         >>> predictions = model.predict(images)
     
     Attributes:
         verbose (bool): The verbosity level for logging information during model operations.
-        model (tf.keras.Model): The Keras model for batch-based predictions.
-        model_patch (tf.keras.Model): The Keras model for patch-based predictions.
+        model (tf.keras.Model): The Keras model for predictions.
     """
 
     def __init__(self, verbose: bool=True):
         dir_path = os.path.dirname(os.path.abspath(__file__)) 
-        path = os.path.join(dir_path, "model18.keras")  
-        patch = os.path.join(dir_path, "model18_patches.keras")  
-        super().__init__(filepath=path, patch=patch, verbose=verbose)
+        path = os.path.join(dir_path, "model_20.keras")  
+        super().__init__(filepath=path, verbose=verbose)
