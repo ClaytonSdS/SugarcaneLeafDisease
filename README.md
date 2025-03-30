@@ -81,7 +81,8 @@ Finally, to mitigate the vanishing gradient problem, we applied a residual appro
 [↑ Top](#top)
 
 ## Training
-![training](figures/training.png)
+[![training](figures/training_lowres.png)](figures/training.png)
+
 
 |           | precision       |  recall       | f1-score       | support       |
 |-----------|-----------------|---------------|----------------|---------------|
