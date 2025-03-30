@@ -2,4 +2,4 @@
 
 # Here you can import main classes and functions for easy access to the package
 from .preprocessing import ImageLabeling
-from .models import Model_20, Model_19, Model_18
+from .models import *

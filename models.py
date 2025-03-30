@@ -251,6 +251,56 @@ class Model:
         
         return self.decoded
 
+class Model_18(Model):
+    """
+    A subclass of the `Model` class, specifically designed for loading and predicting with the model 18 architecture.
+
+    Args:
+        verbose (bool, optional): If True, enables verbose logging throughout the model's operations, providing detailed information 
+                                  about each step. Default is True.
+
+    Inherits:
+        Model: A parent class responsible for handling the base operations of model loading, prediction, and image processing.
+
+    Example:
+        >>> model = Model_20(verbose=True)
+        >>> predictions = model.predict(images)
+    
+    Attributes:
+        verbose (bool): The verbosity level for logging information during model operations.
+        model (tf.keras.Model): The Keras model for predictions.
+    """
+
+    def __init__(self, verbose: bool=True):
+        dir_path = os.path.dirname(os.path.abspath(__file__)) 
+        path = os.path.join(dir_path, "model_18.keras")  
+        super().__init__(filepath=path, verbose=verbose)
+
+class Model_19(Model):
+    """
+    A subclass of the `Model` class, specifically designed for loading and predicting with the model 18 architecture.
+
+    Args:
+        verbose (bool, optional): If True, enables verbose logging throughout the model's operations, providing detailed information 
+                                  about each step. Default is True.
+
+    Inherits:
+        Model: A parent class responsible for handling the base operations of model loading, prediction, and image processing.
+
+    Example:
+        >>> model = Model_20(verbose=True)
+        >>> predictions = model.predict(images)
+    
+    Attributes:
+        verbose (bool): The verbosity level for logging information during model operations.
+        model (tf.keras.Model): The Keras model for predictions.
+    """
+
+    def __init__(self, verbose: bool=True):
+        dir_path = os.path.dirname(os.path.abspath(__file__)) 
+        path = os.path.join(dir_path, "model_19.keras")  
+        super().__init__(filepath=path, verbose=verbose)
+
 
 class Model_20(Model):
     """
