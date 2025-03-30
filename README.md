@@ -1,65 +1,156 @@
+<a id="top"></a>
+![banner](figures/banner.png)
+
+##  
+* [Introduction](#introduction)
+* [Preprocessing](#preprocessing)
+* [Architecture](#architecture)
+
+* [Training](#training)
+  * [Hyperparameters](#hyperparameters)
+  * [Learning Rate Scheduler](#learning-rate-scheduler)
+  * [Loss Function and Metrics](#loss-function-and-metrics)
+  * [Data Augmentation](#data-augmentation)
+* [How to use it?](#how-to-use-it)
+* [What's next?](#whats-next)
+
+
 ## Introduction
 The diseases that affect crops, including sugarcane and other plants, have a huge impact on the agronomy sector, forcing farmers to use pesticides and other chemicals to protect their crops against these agents, saving costs and increasing profits.
 
 Note that these pesticides are generally toxic, and their presence in high quantities can be harmful to human health. Additionally, the use of such substances can contribute to climate change, as their decomposition releases greenhouse gases such as N2O, which is commonly found in pesticide compositions. Because of that, clever solutions that address this problem are highly welcome. 
 
-To contribute to this goal and take a step forward in this field, we developed an AI tool capable of predicting diseases in sugarcane leaves, using Residual Blocks composed of traditional CNN layers with [CBAM](figures/cbam.png) layers in between.
+To contribute to this goal and take a step forward in this field, we developed a deep neural network model capable of predicting diseases in sugarcane leaves, using Residual Blocks composed of traditional Convolutional Neural Network (CNN) layers, integrated with Extreme Inception ([Xception](figures/xception.png)) and Convolutional Block Attention Module ([CBAM](figures/cbam.png)) layers in between.
+
+[↑ Top](#top)
 
 ## Preprocessing
-During the preprocessing phase, we utilized a dataset [[1]](https://doi.org/10.17632/9twjtv92vk.1) composed of 5 types of labels: healthy, mosaic, redrot, rust, and yellow.
+During the preprocessing phase, we utilized a dataset [[5]](https://doi.org/10.17632/9twjtv92vk.1) composed of five labels: healthy, mosaic, redrot, rust, and yellow.
 
-The first process we conducted was the rotation of the images to a vertical orientation. After that, we resized all the samples to 512x512 pixels*. During this process, we occasionally encountered some duplicate images, which required us to implement a code to remove them using a hashing algorithm.
+The first step was data transformation, where we transposed, rescaled, and applied zero-padding to ensure a consistent shape of (512, 512) across all images. Additionally, we removed low-quality images when necessary.
 
-The next phase was a segmentation task, where we utilized two different approaches: the Photoshop background removal tool and a Canny edge detector using Python. Although both implementations worked for our goal, their results presented some noise, which had to be addressed through a smoothing pipeline (as shown in Fig. 2).
+To eliminate potential duplicate images, we implemented a Mapping Duplicates Pipeline. This pipeline uses image hashing (MD5) to detect duplicates, storing flagged images in a CSV file. After this step, our dataset was refined to 2311 samples.
 
-After this process, all the samples were segmented and ready to be used in the training phase.
+Next, we developed a Segmentation Block, composed of two key components:
 
-Note that the entire preprocessing pipeline can be seen in Figure 1.
-*
+* Background Removal
 
-![pipeline](figures/preprocessing.png)
+* Mask Smoothing Pipeline
+
+For Background Removal, we applied two different approaches: the Photoshop background removal tool and a Canny edge detector (Python). Although both methods were effective, their outputs contained noise, which required post-processing.
+
+To address this, we introduced the Mask Smoothing Pipeline, which applied a combination of median filtering, Gaussian filtering, and morphological opening operations. This process helped refine the segmented images, ensuring high-quality masks.
+
+At this stage, we had 2311 high-quality samples, all in the (512, 512, 3) format.
+
+To increase the dataset size for training, we employed a TensorFlow-based patch extraction method, as shown in Figure 1. Given that pixel values ranged between [0, 255], we implemented a Second Quartile Measurement (Q2), extracting only high-information patches (i.e., patches where at least 50% of pixels were non-zero).
+
+Finally, we developed a labeling pipeline, which converted string labels into label-smoothed tensors [[4]](https://arxiv.org/abs/1906.02629). This technique helps improve model generalization by preventing overconfidence in predictions.
+
+![preprocessing](figures/preprocessing.gif)
+
+[↑ Top](#top)
 
 ## Architecture
-The architecture we selected for our model can be seen in Figure 4 below.
+The architecture we selected for our model is shown in Figure 2 below.
+![ARCHITECTURE-DIAGRAM](figures/arch.png)
 
-Note that it is a sequential model with residual blocks—Block Type 1 and Block Type 2 (as shown in Fig. 3-b and 3-c). These blocks have a sandwich-like composition, with a Conv-CBAM-Conv structure as the key combination. In this case, we implemented [CBAM](figures/cbam.png) because it is a lightweight feature refinement module that infers attention maps [[2]](https://doi.org/10.1007/978-3-030-01234-2_1), including both channel and spatial maps.
+Our model follows a sequential structure with residual blocks arranged in a sandwich-like configuration, where the core combination consists of [Xception](figures/xception.png), [CBAM](figures/cbam.png), and [Xception](figures/xception.png) modules. We implemented [CBAM](figures/cbam.png) (as shown in fig. 3) because it is a lightweight feature refinement module that generates attention maps [[6]](https://doi.org/10.1007/978-3-030-01234-2_1), capturing both channel-wise and spatial attention.
 
-Moreover, deep convolutional networks are known to learn increasingly deeper representations through long sequences of convolutional layers with progressively more kernels. As a consequence, we followed those same principles proposed in AlexNet paper [3], incorporating a total of fiveteen convolutional layers.
+[![CBAM-DIAGRAM](figures/cbam_lowres.png)](figures/cbam.png)
 
-Furthermore, instead of utilizing an average pooling layer [[4]](https://doi.org/10.1109/CVPR.2016.90) — which serves as an aggregator of spatial information — we opted for max pooling, which produced better results while maintaining the same aggregation purpose — max pooling also acts as a distinctive object feature selector [[2]](https://doi.org/10.1007/978-3-030-01234-2_1) — and reduce the number of parameters.
 
-At last, in order to avoid the vanishing gradient problem, we employed a residual approach to connect these residual blocks, following the proposed approach of typical ResNet architectures [[4]](https://doi.org/10.1109/CVPR.2016.90).
+To further enhance feature extraction efficiency, we integrated [Xception](figures/xception.png) (Extreme Inception) blocks into our architecture. [Xception](figures/xception.png) (as shown in fig. 4) improves on traditional Inception modules by leveraging depthwise separable convolutions, which reduce the number of parameters while preserving powerful representational capacity [[1]](https://doi.org/10.1109/CVPR.2017.195). This combination of [CBAM](figures/cbam.png) and [Xception](figures/xception.png) helps to optimize both feature refinement and extraction efficiency, driving better performance in classification tasks.
 
-![model18-diagram](figures/model_18.png)
+Unlike standard convolutional layers, depthwise separable convolutions break down the process into two distinct steps:
 
+* Depthwise convolution applies a single filter to each input channel independently.
+
+* Pointwise convolution (1x1 convolution) then combines the outputs from the depthwise convolution, enabling efficient cross-channel interactions.
+
+[![XCEPTION-DIAGRAM](figures/xception_lowres.png)](figures/xception.png)
+
+This approach significantly lowers computational costs while maintaining high expressiveness in feature extraction. By combining [Xception](figures/xception.png) blocks with [CBAM](figures/cbam.png) modules, our model benefits from both enhanced attention mechanisms ([CBAM](figures/cbam.png)) and optimized feature representations ([Xception](figures/xception.png)). This synergy leads to improved classification performance while maintaining efficiency.
+
+Moreover, deep convolutional networks are known to learn increasingly complex representations through a series of convolutional layers with progressively larger numbers of kernels. Following those ideas proposed in the AlexNet paper [3], we incorporated plenty of convolutional layers, with progressively larger numbers of filters.
+
+Instead of using an average pooling layer [[2]](https://doi.org/10.1109/CVPR.2016.90) — which aggregates spatial information—we opted for max pooling, which yielded better results while preserving the same purpose of aggregation. Max pooling also acts as a distinctive feature selector for objects [[6]](https://doi.org/10.1007/978-3-030-01234-2_1) and helps reduce the number of parameters.
+
+Finally, to mitigate the vanishing gradient problem, we applied a residual approach to connect the blocks, following the methodology proposed by ResNet architectures [[2]](https://doi.org/10.1109/CVPR.2016.90).
+
+[↑ Top](#top)
 
 ## Training
-![training](figures/training.gif)
+![training](figures/training.png)
 
 |           | precision       |  recall       | f1-score       | support       |
 |-----------|-----------------|---------------|----------------|---------------|
-|  healthy |   0.81  |  0.96  | 0.88  | 159 |
-|  mosaic  |   0.90  |  0.69  | 0.78  | 102 |
-|  redrot  |   0.97  |  0.94  | 0.95  | 158 |
-|  rust    |   1.00  |  0.91  | 0.95  | 153 |
-|  yellow  |   0.87  |  0.96  | 0.91  | 121 |
+|  healthy |   0.96  |  0.97  | 0.96  | 200 |
+|  mosaic  |   0.96  |  0.97  | 0.97  | 200 |
+|  redrot  |   0.91  |  0.99  | 0.95  | 200 |
+|  rust    |   1.00  |  0.85  | 0.92  | 200 |
+|  yellow  |   0.97  |  0.99  | 0.98  | 200 |
 ||||||
-|  accuracy      |         |        | 0.90  | 693 |
-|  macro avg     |   0.91  |  0.89  | 0.89  | 693 |
-|  weighted avg  |   0.91  |  0.90  | 0.90  | 693 |
+|  accuracy      |         |        | 0.96  | 1000 |
+|  macro avg     |   0.96  |  0.96  | 0.96  | 1000 |
+|  weighted avg  |   0.96  |  0.96  | 0.96  | 1000 |
+
+### Hyperparameters
+
+The following hyperparameters were used for model training:
+
+| Hyperparameter     | Value  |
+|-------------------|--------|
+| Learning Rate    | 0.001  |
+| Dropout Rate     | 0.3    |
+| L2 Regularization | 0.005  |
+| Batch Size       | 16     |
+| Epochs           | 90     |
+
+### Learning Rate Scheduler  
+A **Cosine Decay** learning rate scheduler was used with the following configuration:
+
+- **Initial Learning Rate**: 0.001  
+- **Decay Steps**: `batch_size * batches_per_epoch * epochs`  
+- **Alpha (Final Learning Rate Multiplier)**: 0.0  
+
+### Loss Function and Metrics  
+- **Loss Function**: Categorical Crossentropy  
+- **Evaluation Metric**: Accuracy  
+
+### Data Augmentation  
+
+Data Augmentation was applied **only to the training data (`X_train`)** with the following configurations:
+
+- **Rotation**: 20°  
+- **Horizontal Shift**: 20%  
+- **Vertical Shift**: 20%  
+- **Shear**: 20%  
+- **Zoom**: 20%  
+- **Horizontal Flip**: Yes  
+- **Fill Mode**: Constant  
+
+[↑ Top](#top)
 
 ### How to use it?
 ```python
 # Clone this repository
-!git clone https://github.com/ClaytonSdS/SugarcaneLeafDisease.git
+!git clone https://github.com/NeoGreenCode/SugarcaneLeafDisease.git
 ```
 ```python
-from SugarcaneLeafDisease.models import Model_18
+from SugarcaneLeafDisease.models import Model_20
 
-images = np.random.rand(400, 212, 212, 3) # Your images here—must have 3 channels.
-model = Model_18()
-model.predict(images)
+images = np.random.rand(400, 212, 212, 3)  # Set your images here — must have 3 channels and shape (batch, height, width, channels).
+model = Model_20(verbose=False)  # Instantiate the Model_20 architecture.
+predict = model.predict(images, patch_size=250, use_patches=True)  # Predicted tensor with shape (batch, rows, cols, 5), where rows and cols represent the grid dimensions of the extracted patches.
+predicted_decoded = model.decode(predict)  # Decode the predicted tensor to convert one-hot encoding into labels.
 ```
+```python
+# Plotting the results for each patch — pass the image index to plot based on the length of the predict array.
+
+```
+
+[↑ Top](#top)
 
 ### What's next?
 In conclusion, while our project serves its purpose — predicting diseases in sugarcane leaves — we envision that, to achieve its full potential, one possible step is the incorporation of more samples into the dataset. This would help refine the decision boundary between 'healthy' and 'mosaic' disease, as well as exploring advanced techniques such as transformers. 
@@ -70,13 +161,20 @@ Moreover, the integration of various sensor data, coupled with a self-driving dr
 
 This onboard clever solution could potentially reduce costs by applying pesticides only to critical affected areas. It would also help decrease greenhouse gas emissions and lower the use of chemicals on crops.
 
-#### References
-**1**. Thite, S., Suryawanshi, Y., Patil, K., & Chumchu, P. (2023). Sugarcane leaf image dataset (V1). Mendeley Data. https://doi.org/10.17632/9twjtv92vk.1
+[↑ Top](#top)
 
-**2**. Woo, S., Park, J., Lee, J.-Y., & Kweon, I. S. (2018). CBAM: Convolutional Block Attention Module. In Proceedings of the European Conference on Computer Vision (ECCV) (pp. 3–19). https://doi.org/10.1007/978-3-030-01234-2_1  
+### References
+**1**. Chollet, F. (2017). Xception: Deep learning with depthwise separable convolutions. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 1251–1258. https://doi.org/10.1109/CVPR.2017.195
 
-**3**. Krizhevsky, A., Sutskever, I., & Hinton, G. E. (2012). ImageNet classification with deep convolutional neural networks. In Advances in neural information processing systems (NeurIPS), 25, 1097–1105.  
+**2**. He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 770–778. https://doi.org/10.1109/CVPR.2016.90
 
-**4**. He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 770–778. https://doi.org/10.1109/CVPR.2016.90
+**3**. Krizhevsky, A., Sutskever, I., & Hinton, G. E. (2012). ImageNet classification with deep convolutional neural networks. In Advances in Neural Information Processing Systems (NeurIPS), 25, 1097–1105.
+
+**4**. Müller, R., Kornblith, S., & Hinton, G. (2019). When does label smoothing help? Advances in Neural Information Processing Systems (NeurIPS), 32. https://arxiv.org/abs/1906.02629
+
+**5**. Thite, S., Suryawanshi, Y., Patil, K., & Chumchu, P. (2023). Sugarcane leaf image dataset (V1). Mendeley Data. https://doi.org/10.17632/9twjtv92vk.1
+
+**6**. Woo, S., Park, J., Lee, J.-Y., & Kweon, I. S. (2018). CBAM: Convolutional Block Attention Module. In Proceedings of the European Conference on Computer Vision (ECCV) (pp. 3–19). https://doi.org/10.1007/978-3-030-01234-2_1
+
 
 
