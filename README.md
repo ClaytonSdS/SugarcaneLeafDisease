@@ -143,13 +143,14 @@ from SugarcaneLeafDisease.models import Model_20
 
 images = np.random.rand(400, 212, 212, 3)  # Set your images here — must have 3 channels and shape (batch, height, width, channels).
 model = Model_20(verbose=False)  # Instantiate the Model_20 architecture.
-predict = model.predict(images, patch_size=250, use_patches=True)  # Predicted tensor with shape (batch, rows, cols, 5), where rows and cols represent the grid dimensions of the extracted patches.
+predict = model.predict(images, patch_size=212, use_patches=True)  # Predicted tensor with shape (batch, rows, cols, 5), where rows and cols represent the grid dimensions of the extracted patches.
 predicted_decoded = model.decode(predict)  # Decode the predicted tensor to convert one-hot encoding into labels.
 ```
 ```python
 # Plotting the results for each patch — pass the image index to plot based on the length of the predict array.
-
+model.plot_image_predicted(image_index=0)
 ```
+![sample_predict](figures/sample_predict.png)
 
 [↑ Top](#top)
 
