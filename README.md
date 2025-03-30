@@ -140,6 +140,7 @@ Data Augmentation was applied **only to the training data (`X_train`)** with the
 ```
 ```python
 from SugarcaneLeafDisease.models import Model_20
+# Model Options: Model_18, Model_19, Model_20 and Model_21
 
 images = np.random.rand(400, 212, 212, 3)  # Set your images here — must have 3 channels and shape (batch, height, width, channels).
 model = Model_20(verbose=False)  # Instantiate the Model_20 architecture.
