@@ -105,31 +105,11 @@ class Model:
         
         # Check if the decoded labels exist
         if self.decoded is None:
-            self.decode()
+            self.decoded = self.decode()
 
     def plot_image_predicted(self, image_index: int = 0):
         """
         Plot the model predictions into a grid-like plot.
-
-        This method visualizes the model's predictions by displaying patches of 
-        images and their predicted class labels with corresponding colors.
-
-        Args:
-            image_index (int): The index of the image to plot. 
-                                The value should be in the range [0, len(self.patches)],
-                                where `self.patches` contains the patches from the model's predictions.
-
-        Returns:
-            None: This method does not return anything, it only displays the plot.
-
-        Raises:
-            ValueError: If the `self.predicted`  value is not set correctly.
-        
-        Example:
-            >>> model = Model()
-            >>> predictions = model.predict(images)
-            >>> decoded_labels = model.decode(predictions)
-            >>> model.plot_image_predicted(image_index=0)
         """
         # Define the colors associated with each class label
         class_colors = {
@@ -140,40 +120,50 @@ class Model:
             'redrot': (1, 0, 0, 0.6)  
         }
 
-        # Perform a check to ensure that predicted and decoded values are available
+        # Check if the predicted and decoded values are available
         self.plot_check()
 
-        # Reshaping the patches into a grid of images (each image is a patch)
+        # Reformat the patches into a grid of images (each image is a patch)
         patches_to_plot = tf.reshape(self.patches, [*self.patches.shape[:-1], self.patch_size, self.patch_size, 3])
 
         # Initialize the plot with subplots arranged in a grid
         fig, axes = plt.subplots(self.rows, self.cols, figsize=(self.cols * 2, self.rows * 2))
 
-        # Loop through each grid cell to plot the corresponding patch
+        # If it's a single subplot, 'axes' will be a single Axes object, not a list
+        if self.rows == 1 and self.cols == 1:
+            axes = np.array([[axes]])  # Convert it into a 2D array for consistency
+
+        # Ensure self.patches has the correct shape when rows=1 and cols=1
+        if self.patches.ndim == 4 and self.patches.shape[0] == 1:
+            # Case where there's only one image (1 patch)
+            patches_to_plot = self.patches[0]  # Use only the first (and only) patch
+        else:
+            patches_to_plot = tf.reshape(self.patches, [*self.patches.shape[:-1], self.patch_size, self.patch_size, 3])
+
+        # Loop through each cell of the grid to plot the corresponding patch
         for i in range(self.rows):
             for j in range(self.cols):
-                ax = axes[i, j]
+                ax = axes[i, j]  # In case of 1x1, this becomes the only Axes object
 
                 # Convert the tensor to a numpy array and normalize the image (values between 0 and 1)
-                img = self.patches[image_index, i, j].numpy().astype(float) / 255.0
+                img = patches_to_plot[i, j].numpy().astype(float) / 255.0
 
-                # Ensure that `self.decoded` is not None
-                if self.decoded is None:
-                    self.decode()  # Decode if needed
+                # Reshape the image to match patch dimensions (patch_size, patch_size, 3)
+                img = np.reshape(img, (self.patch_size, self.patch_size, 3))
 
                 # Get the class label and its corresponding color
                 label = self.decoded[image_index, i, j]
                 color = class_colors[label]  # Retrieve the color corresponding to the class label
 
-                # Create a colored overlay (filter) for the image using the RGB part of the color
+                # Create a color overlay (filter) for the image using the RGB part of the color
                 overlay = np.full((self.patch_size, self.patch_size, 3), color[:3])  # Create a matrix filled with the RGB color
-                image_with_overlay = img * (1 - color[3]) + overlay * color[3]  # Blend the image with the color overlay
+                image_with_overlay = img * (1 - color[3]) + overlay * color[3]  # Mix the image with the color overlay
 
                 # Display the image with the overlay applied
                 ax.imshow(image_with_overlay)
-                ax.axis('off')  # Hide axes to make the images "stick together"
+                ax.axis('off')  # Hide the axes so the images "join together"
 
-        # Adjust layout to remove unnecessary whitespace between subplots
+        # Adjust the layout to remove unnecessary white space between subplots
         plt.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0.01, hspace=0.01)
 
         # Create a legend to explain the color mapping for each class label
@@ -188,6 +178,7 @@ class Model:
 
         # Display the plot
         plt.show()
+
 
 
     def predict(self, images: np.array, patch_size: int = 64, use_patches: bool = True):
@@ -256,7 +247,7 @@ class Model:
         labels_inversed = {0: 'healthy', 1: 'mosaic', 2: 'yellow', 3: 'redrot', 4: 'rust'}
 
         pred = pred if pred is not None else self.predicted
-        self.decoded = np.vectorize(labels_inversed.get)(tf.argmax(pred, axis=-1)) if self.decoded is not None else self.decoded
+        self.decoded = np.vectorize(labels_inversed.get)(tf.argmax(pred, axis=-1)) if self.decoded is None else self.decoded
         
         return self.decoded
 
