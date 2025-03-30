@@ -99,14 +99,15 @@ class Model:
 
     # Check and validate the existence of predicted and decoded tensors before plotting
     def plot_check(self):
-        # Check if predicted tensor exists
-        if self.predicted is not None:
-            # Check if predicted values are decoded
-            if self.decoded is None:
-                self.decode()  # Call decode() method to decode the predictions
-            
-        else:
+        # Check if the predicted tensor exists
+        if self.predicted is None:
             raise ValueError("[ERROR] No predicted tensor found. Please call model.predict() first.")
+        
+        else:
+        # Check if the decoded labels exist
+            if self.decoded is None:
+                self.decode()
+
 
 
     def plot_image_predicted(self, image_index: int = 0):
@@ -145,6 +146,10 @@ class Model:
 
         # Perform a check to ensure that predicted and decoded values are available
         self.plot_check()
+
+        # Se self.decoded é None, chama decode() para preencher os rótulos
+        if self.decoded is None:
+            self.decode()  # Chama o método decode() se self.decoded for None
 
         # Reshaping the patches into a grid of images (each image is a patch)
         patches_to_plot = tf.reshape(self.patches, [*self.patches.shape[:-1], self.patch_size, self.patch_size, 3])
