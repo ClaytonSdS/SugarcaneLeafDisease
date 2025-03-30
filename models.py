@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from .custom_layers import CBAM, Xception
+from .custom_layers import CBAM, Xception, XCeption
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
