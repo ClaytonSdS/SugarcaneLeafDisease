@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from .custom_layers import CBAM, Xception, XCeption
+from .custom_layers import CBAM, Xception, XCeption, CBAM_ShortMLP
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -263,7 +263,7 @@ class Model_18(Model):
         Model: A parent class responsible for handling the base operations of model loading, prediction, and image processing.
 
     Example:
-        >>> model = Model_20(verbose=True)
+        >>> model = Model_18(verbose=True)
         >>> predictions = model.predict(images)
     
     Attributes:
@@ -288,7 +288,7 @@ class Model_19(Model):
         Model: A parent class responsible for handling the base operations of model loading, prediction, and image processing.
 
     Example:
-        >>> model = Model_20(verbose=True)
+        >>> model = Model_19(verbose=True)
         >>> predictions = model.predict(images)
     
     Attributes:
@@ -325,4 +325,30 @@ class Model_20(Model):
     def __init__(self, verbose: bool=True):
         dir_path = os.path.dirname(os.path.abspath(__file__)) 
         path = os.path.join(dir_path, "model_20.keras")  
+        super().__init__(filepath=path, verbose=verbose)
+
+
+class Model_21(Model):
+    """
+    A subclass of the `Model` class, specifically designed for loading and predicting with the model 18 architecture.
+
+    Args:
+        verbose (bool, optional): If True, enables verbose logging throughout the model's operations, providing detailed information 
+                                  about each step. Default is True.
+
+    Inherits:
+        Model: A parent class responsible for handling the base operations of model loading, prediction, and image processing.
+
+    Example:
+        >>> model = Model_21(verbose=True)
+        >>> predictions = model.predict(images)
+    
+    Attributes:
+        verbose (bool): The verbosity level for logging information during model operations.
+        model (tf.keras.Model): The Keras model for predictions.
+    """
+
+    def __init__(self, verbose: bool=True):
+        dir_path = os.path.dirname(os.path.abspath(__file__)) 
+        path = os.path.join(dir_path, "model_21.keras")  
         super().__init__(filepath=path, verbose=verbose)
