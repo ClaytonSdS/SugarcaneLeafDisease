@@ -86,15 +86,15 @@ Finally, to mitigate the vanishing gradient problem, we applied a residual appro
 
 |           | precision       |  recall       | f1-score       | support       |
 |-----------|-----------------|---------------|----------------|---------------|
-|  healthy |   0.96  |  0.97  | 0.96  | 200 |
-|  mosaic  |   0.96  |  0.97  | 0.97  | 200 |
-|  redrot  |   0.91  |  0.99  | 0.95  | 200 |
-|  rust    |   1.00  |  0.85  | 0.92  | 200 |
-|  yellow  |   0.97  |  0.99  | 0.98  | 200 |
+|  healthy |   0.91  |  0.97  | 0.94  | 417 |
+|  mosaic  |   0.94  |  0.89  | 0.92  | 327 |
+|  redrot  |   0.97  |  0.97  | 0.97  | 261 |
+|  rust    |   0.99  |  0.89  | 0.94  | 180 |
+|  yellow  |   0.96  |  1.00  | 0.98  | 237 |
 ||||||
-|  accuracy      |         |        | 0.96  | 1000 |
-|  macro avg     |   0.96  |  0.96  | 0.96  | 1000 |
-|  weighted avg  |   0.96  |  0.96  | 0.96  | 1000 |
+|  accuracy      |         |        | 0.95  | 1422 |
+|  macro avg     |   0.95  |  0.94  | 0.95  | 1422 |
+|  weighted avg  |   0.95  |  0.95  | 0.94  | 1422 |
 
 ### Hyperparameters
 
