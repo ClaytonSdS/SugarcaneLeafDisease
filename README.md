@@ -52,7 +52,7 @@ Finally, we developed a labeling pipeline, which converted string labels into la
 [↑ Top](#top)
 
 ## Architecture
-The architecture we selected for our model is shown in Figure 2 below.
+The architecture we selected for our model (Model_21) is shown in Figure 2 below.
 ![ARCHITECTURE-DIAGRAM](figures/arch.png)
 
 Our model follows a sequential structure with residual blocks arranged in a sandwich-like configuration, where the core combination consists of [Xception](figures/xception.png), [CBAM](figures/cbam.png), and [Xception](figures/xception.png) modules. We implemented [CBAM](figures/cbam.png) (as shown in fig. 3) because it is a lightweight feature refinement module that generates attention maps [[6]](https://doi.org/10.1007/978-3-030-01234-2_1), capturing both channel-wise and spatial attention.
