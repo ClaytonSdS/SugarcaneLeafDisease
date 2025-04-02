@@ -86,15 +86,15 @@ Finally, to mitigate the vanishing gradient problem, we applied a residual appro
 
 |           | precision       |  recall       | f1-score       | support       |
 |-----------|-----------------|---------------|----------------|---------------|
-|  healthy |   0.96  |  0.97  | 0.96  | 200 |
-|  mosaic  |   0.96  |  0.97  | 0.97  | 200 |
-|  redrot  |   0.91  |  0.99  | 0.95  | 200 |
-|  rust    |   1.00  |  0.85  | 0.92  | 200 |
-|  yellow  |   0.97  |  0.99  | 0.98  | 200 |
+|  healthy |   0.91  |  0.97  | 0.94  | 417 |
+|  mosaic  |   0.94  |  0.89  | 0.92  | 327 |
+|  redrot  |   0.97  |  0.97  | 0.97  | 261 |
+|  rust    |   0.99  |  0.89  | 0.94  | 180 |
+|  yellow  |   0.96  |  1.00  | 0.98  | 237 |
 ||||||
-|  accuracy      |         |        | 0.96  | 1000 |
-|  macro avg     |   0.96  |  0.96  | 0.96  | 1000 |
-|  weighted avg  |   0.96  |  0.96  | 0.96  | 1000 |
+|  accuracy      |         |        | 0.95  | 1422 |
+|  macro avg     |   0.95  |  0.94  | 0.95  | 1422 |
+|  weighted avg  |   0.95  |  0.95  | 0.94  | 1422 |
 
 ### Hyperparameters
 
@@ -139,11 +139,11 @@ Data Augmentation was applied **only to the training data (`X_train`)** with the
 !git clone https://github.com/NeoGreenCode/SugarcaneLeafDisease.git
 ```
 ```python
-from SugarcaneLeafDisease.models import Model_20
+from SugarcaneLeafDisease.models import Model_21
 # Model Options: Model_18, Model_19, Model_20 and Model_21
 
 images = np.random.rand(400, 212, 212, 3)  # Set your images here — must have 3 channels and shape (batch, height, width, channels).
-model = Model_20(verbose=False)  # Instantiate the Model_20 architecture.
+model = Model_21(verbose=False)  # Instantiate the Model_20 architecture.
 predict = model.predict(images, patch_size=212, use_patches=True)  # Predicted tensor with shape (batch, rows, cols, 5), where rows and cols represent the grid dimensions of the extracted patches.
 predicted_decoded = model.decode(predict)  # Decode the predicted tensor to convert one-hot encoding into labels.
 ```

@@ -92,10 +92,11 @@ class Model:
         self.batch_size, self.height, self.width, self.channels = self.array2predict.shape 
 
     def patches_check_validation(self):
-        if self.patch_size > min(self.height, self.width):
-            raise ValueError(f"[ERROR] The maximum patch size for this configuration is {min(self.height, self.width)}")
-        elif self.patch_size <= 0:
-            raise ValueError(f"[ERROR] The minimum patch size must be 1")
+        if self.use_patches:
+            if self.patch_size > min(self.height, self.width):
+                raise ValueError(f"[ERROR] The maximum patch size for this configuration is {min(self.height, self.width)}")
+            elif self.patch_size <= 0:
+                raise ValueError(f"[ERROR] The minimum patch size must be 1")
 
     # Check and validate the existence of predicted and decoded tensors before plotting
     def plot_check(self):
@@ -181,7 +182,7 @@ class Model:
 
 
 
-    def predict(self, images: np.array, patch_size: int = 64, use_patches: bool = True):
+    def predict(self, images: np.array, patch_size: int = 64, use_patches: bool = False):
         images = np.array(images)
         self.use_patches = use_patches
         self.patch_size = patch_size
